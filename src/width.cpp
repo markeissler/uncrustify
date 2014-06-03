@@ -359,41 +359,17 @@ static void split_line(chunk_t *start)
          return;
       }
 
-      // if(prev->type == CT_OC_COLON || prev->type == CT_ADDR || chunk_is_star(prev))
-      // {
-      //    // do nothing
-      //    //
-      // }
-      // else
-      // {
-         int plen = (pc->len() < 5) ? pc->len() : 5;
-         int slen = (start->len() < 5) ? start->len() : 5;
-         LOG_FMT(LSPLIT, " '%.*s' [%s], started on token '%.*s' [%s]\n",
-               plen, pc->str.c_str(), get_token_name(pc->type),
-               slen, start->str.c_str(), get_token_name(start->type));
+      // otherwise, apply normal wrapping rules
+      int plen = (pc->len() < 5) ? pc->len() : 5;
+      int slen = (start->len() < 5) ? start->len() : 5;
+      LOG_FMT(LSPLIT, " '%.*s' [%s], started on token '%.*s' [%s]\n",
+            plen, pc->str.c_str(), get_token_name(pc->type),
+            slen, start->str.c_str(), get_token_name(start->type));
 
-         split_before_chunk(pc);
+      split_before_chunk(pc);
 
-         return;
-      // }
+      return;
    }
-
-   // if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev) && (start->flags & PCF_IN_OC_MSG) != 0)
-   // {
-   //    LOG_FMT(LSPLIT, " ** OC MSG **\n");
-
-   //    // reverse to message name
-   //    while (((pc = chunk_get_prev(pc)) != NULL) && !chunk_is_newline(pc))
-   //    {
-   //      if (pc->type != CT_SPACE && pc->type == CT_OC_MSG_NAME)
-   //      {
-   //        split_before_chunk(pc);
-   //      }
-   //    }
-
-   //    return;
-   // }
-
 }
 
 
