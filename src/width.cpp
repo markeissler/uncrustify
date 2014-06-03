@@ -244,7 +244,7 @@ static void split_line(chunk_t *start)
       LOG_FMT(LSPLIT, "%s: for split didn't work\n", __func__);
    }
 
-   /* If this is in a function call or prototype, split on commas or right
+   /* If this is in a prototype or function call, split on commas or right
     * after the open paren
     */
    else if (((start->flags & PCF_IN_FCN_DEF) != 0) ||
@@ -318,7 +318,7 @@ static void split_line(chunk_t *start)
    if (pc == NULL)
    {
       pc = start;
-      /* Don't break before a close, comma, or colon */
+      /* Don't break before a close, comma, or semicolon */
       if ((start->type == CT_PAREN_CLOSE) ||
           (start->type == CT_PAREN_OPEN) ||
           (start->type == CT_FPAREN_CLOSE) ||
@@ -341,16 +341,45 @@ static void split_line(chunk_t *start)
 
    /* add a newline before pc */
    prev = chunk_get_prev(pc);
-   if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev))
+   if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev)
+      && (prev->type == CT_OC_COLON))
+   {
+      // do nothing
+      //
+   } else if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev)
+      && (prev->type == CT_ADDR || chunk_is_star(prev)))
+   {
+      // do nothing
+      //
+   } else if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev))
    {
       int plen = (pc->len() < 5) ? pc->len() : 5;
       int slen = (start->len() < 5) ? start->len() : 5;
       LOG_FMT(LSPLIT, " '%.*s' [%s], started on token '%.*s' [%s]\n",
-              plen, pc->str.c_str(), get_token_name(pc->type),
-              slen, start->str.c_str(), get_token_name(start->type));
+            plen, pc->str.c_str(), get_token_name(pc->type),
+            slen, start->str.c_str(), get_token_name(start->type));
 
       split_before_chunk(pc);
+
+      return;
    }
+
+   if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev) && (start->flags & PCF_IN_OC_MSG) != 0)
+   {
+      LOG_FMT(LSPLIT, " ** OC MSG **\n");
+
+      // reverse to message name
+      while (((pc = chunk_get_prev(pc)) != NULL) && !chunk_is_newline(pc))
+      {
+        if (pc->type != CT_SPACE && pc->type == CT_OC_MSG_NAME)
+        {
+          split_before_chunk(pc);
+        }
+      }
+
+      return;
+   }
+
 }
 
 
