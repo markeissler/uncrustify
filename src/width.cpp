@@ -343,23 +343,59 @@ static void split_line(chunk_t *start)
    prev = chunk_get_prev(pc);
    if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev))
    {
-      // are we in an OC message? split before the message name
+      /* are we in an OC message? split before the message name */
       if ((start->flags & PCF_IN_OC_MSG) != 0) {
          LOG_FMT(LSPLIT, " ** OC MSG **\n");
 
-         // reverse to message name
+         /* reverse to message name and then split (ahead of it) */
          while (((pc = chunk_get_prev(pc)) != NULL) && !chunk_is_newline(pc))
          {
-           if (pc->type != CT_SPACE && pc->type == CT_OC_MSG_NAME)
+           if (pc->type == CT_OC_MSG_NAME)
            {
+             LOG_FMT(LSPLIT, " ** OC MSG - WRAP **\n");
+
+             /* remove space before message name, then split */
+             chunk_t *pcsp = chunk_get_prev(pc);
+             if (pcsp->type == CT_SPACE) {
+               chunk_del(pcsp);
+             }
              split_before_chunk(pc);
            }
          }
 
+         /* if message type is a block expr, split (ahead of it) */
+         chunk_t *pcn = chunk_get_next(pc);     // OC_MSG_NAME
+         if ((pcn != NULL) && pcn->type == CT_OC_MSG_NAME) {
+           chunk_t *pcnn = chunk_get_next(pcn); // OC_BLOCK_COLON
+           pcnn = chunk_get_next(pcnn);         // OC_BLOCK_CARET
+           if ((pcnn != NULL)
+               && pcnn->type == CT_OC_BLOCK_CARET
+               && pcnn->parent_type == CT_OC_BLOCK_EXPR) {
+
+              LOG_FMT(LSPLIT, " ** OC MSG - SPLIT INLINE BLOCK **\n");
+
+             /* split only if message type won't fit on opening line */
+             if (((pcn->column + pcn->len()) + (pcnn->column + pcnn->len())-1)
+                 > cpd.settings[UO_code_width].n) {
+               split_before_chunk(pcnn);
+             }
+           }
+         }
+
+//        chunk_t *pcn = chunk_get_next(pc);
+//        if (pcn->type == CT_OC_MSG_NAME) {
+//          chunk_t *pco = chunk_get_next_type(pcn, CT_OC_COLON, pcn->level);
+//          if (pco != NULL && chunk_get_next(pco)->type == CT_OC_BLOCK_CARET) {
+//            LOG_FMT(LSPLIT, " ** OC MSG INLINE BLOCK 3 **\n");
+//
+//            split_before_chunk(pco);
+//          }
+//        }
+
          return;
       }
 
-      // otherwise, apply normal wrapping rules
+      /* otherwise, apply normal wrapping rules */
       int plen = (pc->len() < 5) ? pc->len() : 5;
       int slen = (start->len() < 5) ? start->len() : 5;
       LOG_FMT(LSPLIT, " '%.*s' [%s], started on token '%.*s' [%s]\n",
