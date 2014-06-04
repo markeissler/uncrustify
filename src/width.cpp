@@ -382,16 +382,6 @@ static void split_line(chunk_t *start)
            }
          }
 
-//        chunk_t *pcn = chunk_get_next(pc);
-//        if (pcn->type == CT_OC_MSG_NAME) {
-//          chunk_t *pco = chunk_get_next_type(pcn, CT_OC_COLON, pcn->level);
-//          if (pco != NULL && chunk_get_next(pco)->type == CT_OC_BLOCK_CARET) {
-//            LOG_FMT(LSPLIT, " ** OC MSG INLINE BLOCK 3 **\n");
-//
-//            split_before_chunk(pco);
-//          }
-//        }
-
          return;
       }
 

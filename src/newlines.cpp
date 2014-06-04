@@ -176,6 +176,12 @@ chunk_t *newline_add_before2(chunk_t *pc, const char *fcn, int line)
    chunk_t nl;
    chunk_t *prev;
 
+   /* remove preceding space if present: don't want a space then a newline! */
+   chunk_t *pcsp = chunk_get_prev(pc);
+   if (pcsp->type == CT_SPACE) {
+      chunk_del(pcsp);
+   }
+
    prev = chunk_get_prev_nvb(pc);
    if (chunk_is_newline(prev))
    {
