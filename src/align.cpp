@@ -1938,29 +1938,32 @@ static void align_oc_msg_colon(chunk_t *so)
          has_colon = true;
          tmp = chunk_get_prev(pc);
 
-         // column reset! (shift left: colon, argument, newline)
-         pc->column = tmp->len() + 1;
-         cas.Add(pc);
-         tmp->column = 0;
-         // handle the argument parts and newline...
-         chunk_t *msg_pcn, *msg_pc = pc;
-         int msg_col = pc->column + 1;
-         while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
-            msg_pcn->column = msg_col;
-            msg_col += msg_pcn->len();
-            if (msg_pcn->type == CT_NEWLINE)
-            {
-               break;
-            }
-            msg_pc = msg_pcn;
-         }
-
-         if ((tmp != NULL) &&
-             ((tmp->type == CT_OC_MSG_FUNC) ||
-              (tmp->type == CT_OC_MSG_NAME)))
+         if (tmp != NULL)
          {
-            nas.Add(tmp);
-            tmp->flags |= PCF_DONT_INDENT;
+            /* column reset! (shift left: colon, argument, newline) */
+            pc->column = tmp->len() + 1;
+            cas.Add(pc);
+            tmp->column = 0;
+            /* handle the argument parts and newline... */
+            chunk_t *msg_pcn, *msg_pc = pc;
+            int msg_col = pc->column + 1;
+            while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
+               msg_pcn->column = msg_col;
+               msg_col += msg_pcn->len();
+               if (msg_pcn->type == CT_NEWLINE)
+               {
+                  break;
+               }
+               msg_pc = msg_pcn;
+            }
+            if ((tmp->type == CT_OC_MSG_FUNC) || (tmp->type == CT_OC_MSG_NAME))
+            {
+               nas.Add(tmp);
+               tmp->flags |= PCF_DONT_INDENT;
+            }
+         } else {
+            pc->column = 0;
+            cas.Add(pc);
          }
          did_line = true;
       }
