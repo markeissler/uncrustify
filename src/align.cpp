@@ -1936,8 +1936,25 @@ static void align_oc_msg_colon(chunk_t *so)
       else if (!did_line && (lcnt - 1 < span) && (pc->type == CT_OC_COLON))
       {
          has_colon = true;
-         cas.Add(pc);
          tmp = chunk_get_prev(pc);
+
+         // column reset! (shift left: colon, argument, newline)
+         pc->column = tmp->len() + 1;
+         cas.Add(pc);
+         tmp->column = 0;
+         // handle the argument parts and newline...
+         chunk_t *msg_pcn, *msg_pc = pc;
+         int msg_col = pc->column + 1;
+         while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
+            msg_pcn->column = msg_col;
+            msg_col += msg_pcn->len();
+            if (msg_pcn->type == CT_NEWLINE)
+            {
+               break;
+            }
+            msg_pc = msg_pcn;
+         }
+
          if ((tmp != NULL) &&
              ((tmp->type == CT_OC_MSG_FUNC) ||
               (tmp->type == CT_OC_MSG_NAME)))
