@@ -190,23 +190,13 @@ static void split_before_oc_msg_block(chunk_t *pc)
    }
 
    LOG_FMT(LSPLIT, " ** OC MSG - SPLIT INLINE BLOCK **\n");
-
-   // chunk_t *msg_pcn, *msg_pc = pc;
-   // int msg_len = msg_pc->column + msg_pc->len();
-   // while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
-   //    msg_len += msg_pcn->len();
-   //    if (msg_pcn->type == CT_NEWLINE)
-   //    {
-   //       break;
-   //    }
-   //    msg_pc = msg_pcn;
-   // }
+#ifdef test
    int msg_len = oc_message_arg_width(pc);
    if (msg_len > cpd.settings[UO_code_width].n)
    {
       split_line(pc);
    }
-
+#endif
    switch (blk_split_option)
    {
       case 2:
@@ -217,35 +207,11 @@ static void split_before_oc_msg_block(chunk_t *pc)
             break;
          }
 
-
-         // chunk_t *msg_pcn, *msg_pc = pc;
-         // int msg_len = msg_pc->column + msg_pc->len();
-         // while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
-         //    msg_len += msg_pcn->len();
-         //    if (msg_pcn->type == CT_NEWLINE)
-         //    {
-         //       break;
-         //    }
-         //    msg_pc = msg_pcn;
-         // }
-
-         // if (msg_len > cpd.settings[UO_code_width].n)
-         // {
-         //    split_line(pc);
-         // }
-
-         // measure line again...
-         // chunk_t *msg_pcn, *msg_pc = pc;
-         // int msg_len = msg_pc->column + msg_pc->len();
-         // while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
-         //    msg_len += msg_pcn->len();
-         //    if (msg_pcn->type == CT_NEWLINE)
-         //    {
-         //       break;
-         //    }
-         //    msg_pc = msg_pcn;
-         // }
+#ifdef TEST
          msg_len = oc_message_arg_width(pc);
+#else
+         int msg_len = oc_message_arg_width(pc);
+#endif
          if (msg_len > cpd.settings[UO_code_width].n)
          {
             split_before_chunk(pcnn);
@@ -256,7 +222,6 @@ static void split_before_oc_msg_block(chunk_t *pc)
       case 1:
       {
          /* always split */
-         // split_line(pc);
          split_before_chunk(pcnn);
       }
       break;
@@ -311,23 +276,15 @@ void do_code_width(void)
                continue;
             }
 
-            split_before_oc_msg_block(pc);
-
 #ifdef TEST
+            split_before_oc_msg_block(pc);
+#endif
+
+//#ifdef TEST
             pcnn = chunk_get_next(pcn);
             if (pcnn != NULL && pcnn->parent_type == CT_OC_BLOCK_EXPR)
             {
 
-               // chunk_t *msg_pcn, *msg_pc = pc;
-               // int msg_len = msg_pc->column + msg_pc->len();
-               // while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
-               //    msg_len += msg_pcn->len();
-               //    if (msg_pcn->type == CT_NEWLINE)
-               //    {
-               //       break;
-               //    }
-               //    msg_pc = msg_pcn;
-               // }
                int msg_len = oc_message_arg_width(pc);
 
                if(cpd.settings[UO_nl_oc_msg_args_block].n == 2
@@ -343,7 +300,7 @@ void do_code_width(void)
                   split_before_oc_msg_block(pc);
                }
             }
-#endif
+//#endif
          }
       }
    } // for
