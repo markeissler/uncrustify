@@ -869,6 +869,12 @@ void register_options(void)
    unc_add_option("nl_oc_msg_args", UO_nl_oc_msg_args, AT_BOOL,
                   "Whether to put each OC message parameter on a separate line\n"
                   "See nl_oc_msg_leave_one_liner");
+   unc_add_option("nl_oc_msg_args_block", UO_nl_oc_msg_args_block, AT_NUM,
+                  "Whether to put OC message parameter inline blocks on a separate line\n"
+                  "when line length will exceed code_width.\n"
+                  "0: Always keep them with their message (default)\n"
+                  "1: add a newline before start of block\n"
+                  "2: add a newline before start of block if block exceeds code_width", 0, 2);
    unc_add_option("nl_fdef_brace", UO_nl_fdef_brace, AT_IARF,
                   "Add or remove newline between function signature and '{'");
    unc_add_option("nl_cpp_ldef_brace", UO_nl_cpp_ldef_brace, AT_IARF,
@@ -1925,6 +1931,7 @@ void set_option_defaults(void)
    cpd.settings[UO_sp_word_brace].a        = AV_ADD;
    cpd.settings[UO_sp_word_brace_ns].a     = AV_ADD;
    cpd.settings[UO_indent_oc_msg_prioritize_first_colon].b = true;
+   // cpd.settting[UO_nl_oc_msg_args_block].n = 2;
 }
 
 
