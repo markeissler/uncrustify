@@ -79,76 +79,6 @@ static void split_before_chunk(chunk_t *pc)
  *
  * @param pc Pointer to a chunk_t of OC_MSG_NAME whose arg is an inline block.
  */
-static void split_before_oc_msg_block_old(chunk_t *pc)
-{
-   /*
-    * if message type is a block expr, split (ahead of it)
-    *
-    * Bail out early if not enabled.
-    */
-   int blk_split_option = cpd.settings[UO_nl_oc_msg_args_block].n;
-   if(!(blk_split_option > 0 && blk_split_option < 3)) {
-      return;
-   }
-
-//         chunk_t *pcn = chunk_get_next(pc);      // OC_MSG_NAME
-   chunk_t *pcn = pc;      // OC_MSG_NAME
-   if ((pcn != NULL) && pcn->type == CT_OC_MSG_NAME) {
-      chunk_t *pcnn = chunk_get_next(pcn); // OC_BLOCK_COLON
-      pcnn = chunk_get_next(pcnn);         // OC_BLOCK_CARET
-      if ((pcnn != NULL)
-         && pcnn->type == CT_OC_BLOCK_CARET
-         && pcnn->parent_type == CT_OC_BLOCK_EXPR) {
-
-         LOG_FMT(LSPLIT, " ** OC MSG - SPLIT INLINE BLOCK **\n");
-
-         switch (blk_split_option)
-         {
-            case 2:
-            {
-               /* split if message type won't fit on line */
-               if (cpd.settings[UO_code_width].n == 0)
-               {
-                  break;
-               }
-
-               chunk_t *msg_pcn, *msg_pc = pcn;
-               int msg_len = msg_pc->column + msg_pc->len();
-               while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
-                  msg_len += msg_pcn->len();
-                  if (msg_pcn->type == CT_NEWLINE)
-                  {
-                     break;
-                  }
-                  msg_pc = msg_pcn;
-               }
-
-               if (pcn->column + msg_len > cpd.settings[UO_code_width].n)
-               {
-                  split_before_chunk(pcnn);
-               }
-            }
-            break;
-
-            case 1:
-            {
-               /* always split */
-               split_before_chunk(pcnn);
-            }
-            break;
-
-            case 0:
-            default:
-            {
-               /* do nothing */
-            }
-         }
-      } // pcnn != NULL
-   }
-
-   return;
-}
-
 static void split_before_oc_msg_block(chunk_t *pc)
 {
    if (pc == NULL)
@@ -190,13 +120,7 @@ static void split_before_oc_msg_block(chunk_t *pc)
    }
 
    LOG_FMT(LSPLIT, " ** OC MSG - SPLIT INLINE BLOCK **\n");
-#ifdef test
-   int msg_len = oc_message_arg_width(pc);
-   if (msg_len > cpd.settings[UO_code_width].n)
-   {
-      split_line(pc);
-   }
-#endif
+
    switch (blk_split_option)
    {
       case 2:
@@ -207,11 +131,7 @@ static void split_before_oc_msg_block(chunk_t *pc)
             break;
          }
 
-#ifdef TEST
-         msg_len = oc_message_arg_width(pc);
-#else
          int msg_len = oc_message_arg_width(pc);
-#endif
          if (msg_len > cpd.settings[UO_code_width].n)
          {
             split_before_chunk(pcnn);
@@ -276,11 +196,6 @@ void do_code_width(void)
                continue;
             }
 
-#ifdef TEST
-            split_before_oc_msg_block(pc);
-#endif
-
-//#ifdef TEST
             pcnn = chunk_get_next(pcn);
             if (pcnn != NULL && pcnn->parent_type == CT_OC_BLOCK_EXPR)
             {
@@ -300,7 +215,6 @@ void do_code_width(void)
                   split_before_oc_msg_block(pc);
                }
             }
-//#endif
          }
       }
    } // for
