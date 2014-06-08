@@ -1,3 +1,10 @@
+Change highlights in uncrustify-0.61 (PENDING)
+-------------------------------------------------------------------------------
+Objective C support enhanced with vastly improved wrapping of OC messages and
+inline blocks.
+
+New options:
+ - nl_oc_msg_args_block
 
 Change highlights in uncrustify-0.60 (1 Jan 2013)
 -------------------------------------------------------------------------------
