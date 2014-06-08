@@ -1936,15 +1936,40 @@ static void align_oc_msg_colon(chunk_t *so)
       else if (!did_line && (lcnt - 1 < span) && (pc->type == CT_OC_COLON))
       {
          has_colon = true;
-         cas.Add(pc);
          tmp = chunk_get_prev(pc);
-         if ((tmp != NULL) &&
-             ((tmp->type == CT_OC_MSG_FUNC) ||
-              (tmp->type == CT_OC_MSG_NAME)))
+
+         if (tmp != NULL)
          {
-            nas.Add(tmp);
-            tmp->flags |= PCF_DONT_INDENT;
+            /* column reset! (shift left: colon, argument, newline) */
+            if(cpd.settings[UO_nl_oc_msg_args].b)
+            {
+               tmp->column = 0;              // OC_MSG_NAME
+               pc->column = tmp->len() + 1;  // OC_COLON
+
+               /* handle the argument parts and newline... */
+               chunk_t *msg_pcn, *msg_pc = pc;
+               int msg_col = pc->column + 1;
+               while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
+                  msg_pcn->column = msg_col;
+                  msg_col += msg_pcn->len();
+                  if (msg_pcn->type == CT_NEWLINE)
+                  {
+                     break;
+                  }
+                  msg_pc = msg_pcn;
+               }
+            }
+            if ((tmp->type == CT_OC_MSG_FUNC) || (tmp->type == CT_OC_MSG_NAME))
+            {
+               nas.Add(tmp);
+               tmp->flags |= PCF_DONT_INDENT;
+            }
+         } else {
+            /* column reset! (shift left: colon) */
+            pc->column = 0;
          }
+
+         cas.Add(pc);
          did_line = true;
       }
       pc = chunk_get_next(pc, CNAV_PREPROC);

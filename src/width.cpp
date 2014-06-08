@@ -22,6 +22,39 @@ static_inline bool is_past_width(chunk_t *pc)
    return((pc->column + pc->len() - 1) > cpd.settings[UO_code_width].n);
 }
 
+/**
+ * Calculate the string length of an OC message plus argument.
+ *
+ * @param pc Pointer to a chunk_t of OC_MSG_NAME whose arg is an inline block.
+ * @return   String length or -1 on error
+ */
+static_inline int oc_message_arg_width(chunk_t *pc)
+{
+   if (pc == NULL
+      || (pc->flags & PCF_IN_OC_MSG) == 0
+      || pc->type != CT_OC_MSG_NAME)
+   {
+      return -1;
+   }
+
+   chunk_t *msg_pcn, *msg_pc = pc;
+   int msg_len = msg_pc->column + msg_pc->len();
+   while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
+      msg_len += msg_pcn->len();
+      if (msg_pcn->type == CT_NEWLINE)
+      {
+         break;
+      }
+      msg_pc = msg_pcn;
+   }
+
+   if(msg_pcn == NULL) {
+      return -1;
+   }
+
+   return msg_len;
+}
+
 
 /**
  * Split right after the chunk
@@ -41,6 +74,88 @@ static void split_before_chunk(chunk_t *pc)
    }
 }
 
+/**
+ * Split an OC block, provided as a message argument, right before the caret.
+ *
+ * @param pc Pointer to a chunk_t of OC_MSG_NAME whose arg is an inline block.
+ */
+static void split_before_oc_msg_block(chunk_t *pc)
+{
+   if (pc == NULL)
+   {
+      return;
+   }
+
+   /*
+    * if message type is a block expr, split (ahead of it)
+    *
+    * Bail out early if not enabled.
+    */
+   int blk_split_option = cpd.settings[UO_nl_oc_msg_args_block].n;
+   if(!(blk_split_option > 0 && blk_split_option < 3)) {
+      return;
+   }
+
+   if ((pc->flags & PCF_IN_OC_MSG) == 0) {
+      return;
+   }
+
+   if (pc->type != CT_OC_MSG_NAME) {
+      return;
+   }
+
+   chunk_t *pcn = chunk_get_next(pc);      // OC_BLOCK_COLON
+   chunk_t *pcnn;                          // OC_BLOCK_CARET
+
+   if (pcn == NULL)
+   {
+      return;
+   }
+
+   pcnn = chunk_get_next(pcn);
+   if(pcnn == NULL ||
+      !(pcnn->type == CT_OC_BLOCK_CARET && pcnn->parent_type == CT_OC_BLOCK_EXPR))
+   {
+      return;
+   }
+
+   LOG_FMT(LSPLIT, " ** OC MSG - SPLIT INLINE BLOCK **\n");
+
+   switch (blk_split_option)
+   {
+      case 2:
+      {
+         /* split if message type won't fit on line */
+         if (cpd.settings[UO_code_width].n == 0)
+         {
+            break;
+         }
+
+         int msg_len = oc_message_arg_width(pc);
+         if (msg_len > cpd.settings[UO_code_width].n)
+         {
+            split_before_chunk(pcnn);
+         }
+      }
+      break;
+
+      case 1:
+      {
+         /* always split */
+         split_before_chunk(pcnn);
+      }
+      break;
+
+      case 0:
+      default:
+      {
+         /* do nothing */
+      }
+   }
+
+   return;
+}
+
 
 /**
  * Step forward until a token goes beyond the limit and then call split_line()
@@ -54,14 +169,55 @@ void do_code_width(void)
 
    for (pc = chunk_get_head(); pc != NULL; pc = chunk_get_next(pc))
    {
-      if (!chunk_is_newline(pc) &&
-          !chunk_is_comment(pc) &&
-          (pc->type != CT_SPACE) &&
-          is_past_width(pc))
+      if (!chunk_is_newline(pc) && !chunk_is_comment(pc) && (pc->type != CT_SPACE))
       {
-         split_line(pc);
+         if (is_past_width(pc))
+         {
+            split_line(pc);
+            continue;
+         }
+
+         /*
+          * if message type is a block expr, split (ahead of it)
+          *
+          * Bail out early if not enabled.
+          */
+         int blk_split_option = cpd.settings[UO_nl_oc_msg_args_block].n;
+         if(!(blk_split_option > 0 && blk_split_option < 3)) {
+            continue;
+         }
+
+         if ((pc->flags & PCF_IN_OC_MSG) != 0) {
+            chunk_t *pcn = chunk_get_next(pc);  // OC_BLOCK_COLON
+            chunk_t *pcnn;                      // OC_BLOCK_CARET
+
+            if(pcn == NULL)
+            {
+               continue;
+            }
+
+            pcnn = chunk_get_next(pcn);
+            if (pcnn != NULL && pcnn->parent_type == CT_OC_BLOCK_EXPR)
+            {
+
+               int msg_len = oc_message_arg_width(pc);
+
+               if(cpd.settings[UO_nl_oc_msg_args_block].n == 2
+                  && (msg_len > cpd.settings[UO_code_width].n))
+               {
+                  split_line(pc);
+                  split_before_oc_msg_block(pc);
+               }
+
+               if(cpd.settings[UO_nl_oc_msg_args_block].n == 1)
+               {
+                  split_line(pc);
+                  split_before_oc_msg_block(pc);
+               }
+            }
+         }
       }
-   }
+   } // for
 }
 
 
@@ -244,7 +400,7 @@ static void split_line(chunk_t *start)
       LOG_FMT(LSPLIT, "%s: for split didn't work\n", __func__);
    }
 
-   /* If this is in a function call or prototype, split on commas or right
+   /* If this is in a prototype or function call, split on commas or right
     * after the open paren
     */
    else if (((start->flags & PCF_IN_FCN_DEF) != 0) ||
@@ -318,7 +474,7 @@ static void split_line(chunk_t *start)
    if (pc == NULL)
    {
       pc = start;
-      /* Don't break before a close, comma, or colon */
+      /* Don't break before a close, comma, or semicolon */
       if ((start->type == CT_PAREN_CLOSE) ||
           (start->type == CT_PAREN_OPEN) ||
           (start->type == CT_FPAREN_CLOSE) ||
@@ -343,13 +499,36 @@ static void split_line(chunk_t *start)
    prev = chunk_get_prev(pc);
    if ((prev != NULL) && !chunk_is_newline(pc) && !chunk_is_newline(prev))
    {
+      /* are we in an OC message? split before the message name */
+      if ((start->flags & PCF_IN_OC_MSG) != 0) {
+         LOG_FMT(LSPLIT, " ** OC MSG **\n");
+
+         /* reverse to message name and then split (ahead of it) */
+         while (pc != NULL && !chunk_is_newline(pc) && pc->type != CT_OC_MSG_NAME)
+         {
+            pc = chunk_get_prev(pc);
+         }
+
+         if (pc->type == CT_OC_MSG_NAME)
+         {
+            LOG_FMT(LSPLIT, " ** OC MSG - WRAP **\n");
+
+            split_before_chunk(pc);
+         }
+
+         return;
+      }
+
+      /* otherwise, apply normal wrapping rules */
       int plen = (pc->len() < 5) ? pc->len() : 5;
       int slen = (start->len() < 5) ? start->len() : 5;
       LOG_FMT(LSPLIT, " '%.*s' [%s], started on token '%.*s' [%s]\n",
-              plen, pc->str.c_str(), get_token_name(pc->type),
-              slen, start->str.c_str(), get_token_name(start->type));
+            plen, pc->str.c_str(), get_token_name(pc->type),
+            slen, start->str.c_str(), get_token_name(start->type));
 
       split_before_chunk(pc);
+
+      return;
    }
 }
 

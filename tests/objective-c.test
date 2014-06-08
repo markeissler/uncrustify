@@ -79,5 +79,9 @@
 
 50410  oc_cond_colon.cfg                            oc/oc_cond_colon.m
 
+50420  meiss_codewidth_fix.cfg                      oc/meiss_codewidth_fix.m
+50421  meiss_codewidth_fix_align_colon.cfg          oc/meiss_codewidth_fix_align_colon.m
+50422  meiss_codewidth_fix_blocks.cfg               oc/meiss_codewidth_fix_blocks.m
+
 50425  meiss_indent_oc_msg_args.cfg                 oc/meiss_indent_oc_msg_args.m
 
