@@ -12,8 +12,7 @@
     derivative:greenDerivative
     centerAt:xAxisCenterPoint
     min:&minValue
-    max:&
-    maxValue];
+    max:&maxValue];
 
   [self findstart:&startBarcode
     end:&endBarcode
