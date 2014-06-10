@@ -1942,16 +1942,41 @@ static void align_oc_msg_colon(chunk_t *so)
          {
             /* column reset! (shift left: colon, argument, newline) */
             if(cpd.settings[UO_nl_oc_msg_args].b)
+            // if(cpd.settings[UO_nl_oc_msg_args].b && pc->level < 2)
             {
-               tmp->column = 0;              // OC_MSG_NAME
-               pc->column = tmp->len() + 1;  // OC_COLON
+               /*
+                * We will push the message name and colon to the left by setting
+                * the message col to its column_indent, and then calculating the
+                * gap between the message name and colon. Finally setting colon
+                * column to follow the gap.
+                *
+                * pc     = colon
+                * tmp    = message name
+                * pc_gap = space between message on left and colon on right
+                * pc_col = save previous pc column for later
+                */
+               int pc_gap = (pc->column - (tmp->column + tmp->len()));
+               tmp->column = tmp->column_indent;
+               int pc_col = pc->column;
+               pc->column = tmp->len() + pc_gap;
 
-               /* handle the argument parts and newline... */
+               /*
+                * We will handle the stuff to the right of the message colon by
+                * calculating the gap between the colon and its argument. Then
+                * setting the argument colon to follow the gap. Iterate through
+                * the line until done (we hit a CT_NEWLINE).
+                */
                chunk_t *msg_pcn, *msg_pc = pc;
-               int msg_col = pc->column + 1;
+               int msg_pc_col = pc_col;
+               int msg_pcn_col = pc->column + 1;
+               int msg_pcn_gap = 0;
                while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
-                  msg_pcn->column = msg_col;
-                  msg_col += msg_pcn->len();
+                  msg_pcn_gap = (msg_pcn->column - (msg_pc_col + msg_pc->len()));
+                  msg_pcn_col += msg_pcn_gap;
+
+                  msg_pc_col = msg_pcn->column;
+                  msg_pcn->column = msg_pcn_col;
+
                   if (msg_pcn->type == CT_NEWLINE)
                   {
                      break;
