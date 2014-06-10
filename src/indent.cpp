@@ -309,7 +309,7 @@ static void indent_pse_push(struct parse_frame& frm, chunk_t *pc)
  * Removes the top entry
  *
  * @param frm  The parse frame
- * @param pc   The chunk causing the push
+ * @param pc   The chunk causing the pop
  */
 static void indent_pse_pop(struct parse_frame& frm, chunk_t *pc)
 {
@@ -796,6 +796,16 @@ void indent_text(void)
                indent_pse_pop(frm, pc);
             }
 
+            /* Close out squares around OC messages */
+            if ((frm.pse[frm.pse_tos].type == CT_SQUARE_OPEN) &&
+               ((pc->type == CT_SQUARE_CLOSE) && (pc->flags & PCF_IN_OC_MSG)))
+            {
+               indent_pse_pop(frm, pc);
+               frm.paren_count--;
+
+               continue;
+            }
+
             /* Close out parens and squares */
             if ((frm.pse[frm.pse_tos].type == (pc->type - 1)) &&
                 ((pc->type == CT_PAREN_CLOSE) ||
@@ -1236,8 +1246,11 @@ void indent_text(void)
       }
       else if (pc->type == CT_SQUARE_OPEN && (pc->flags & PCF_IN_OC_MSG))
       {
+         /*
+          * Indent OC message args
+          */
          int arg_indent_size = cpd.settings[UO_indent_oc_msg_args].n;
-         frm.level++;
+         frm.paren_count++;
          indent_pse_push(frm, pc);
          frm.pse[frm.pse_tos].indent     = frm.pse[frm.pse_tos - 1].indent + arg_indent_size;
          frm.pse[frm.pse_tos].indent_tmp = frm.pse[frm.pse_tos].indent;
