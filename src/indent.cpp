@@ -795,7 +795,8 @@ void indent_text(void)
             {
                indent_pse_pop(frm, pc);
             }
-
+#define INDENT_OC_MSG_ARGS
+#ifdef INDENT_OC_MSG_ARGS
             /* Close out squares around OC messages */
             if ((frm.pse[frm.pse_tos].type == CT_SQUARE_OPEN) &&
                ((pc->type == CT_SQUARE_CLOSE) && (pc->flags & PCF_IN_OC_MSG)))
@@ -805,7 +806,7 @@ void indent_text(void)
 
                continue;
             }
-
+#endif
             /* Close out parens and squares */
             if ((frm.pse[frm.pse_tos].type == (pc->type - 1)) &&
                 ((pc->type == CT_PAREN_CLOSE) ||
@@ -1241,21 +1242,26 @@ void indent_text(void)
                {
                   frm.pse[frm.pse_tos].indent = next->column;
                }
-            }
+              }
          }
       }
+#ifdef INDENT_OC_MSG_ARGS
       else if (pc->type == CT_SQUARE_OPEN && (pc->flags & PCF_IN_OC_MSG))
       {
          /*
           * Indent OC message args
           */
          int arg_indent_size = cpd.settings[UO_indent_oc_msg_args].n;
-         frm.paren_count++;
+
          indent_pse_push(frm, pc);
-         frm.pse[frm.pse_tos].indent     = frm.pse[frm.pse_tos - 1].indent + arg_indent_size;
+
+         frm.pse[frm.pse_tos].indent = pc->column + pc->len() + arg_indent_size;
          frm.pse[frm.pse_tos].indent_tmp = frm.pse[frm.pse_tos].indent;
          frm.pse[frm.pse_tos].indent_tab = frm.pse[frm.pse_tos].indent;
+
+         frm.paren_count++;
       }
+#endif
       else if ((pc->type == CT_PAREN_OPEN) ||
                (pc->type == CT_SPAREN_OPEN) ||
                (pc->type == CT_FPAREN_OPEN) ||

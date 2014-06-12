@@ -1942,7 +1942,6 @@ static void align_oc_msg_colon(chunk_t *so)
          {
             /* column reset! (shift left: colon, argument, newline) */
             if(cpd.settings[UO_nl_oc_msg_args].b)
-            // if(cpd.settings[UO_nl_oc_msg_args].b && pc->level < 2)
             {
                /*
                 * We will push the message name and colon to the left by setting
@@ -1956,9 +1955,9 @@ static void align_oc_msg_colon(chunk_t *so)
                 * pc_col = save previous pc column for later
                 */
                int pc_gap = (pc->column - (tmp->column + tmp->len()));
-               tmp->column = tmp->column_indent;
+               tmp->column = (tmp->column_indent > 0) ? (tmp->column_indent) : 1;
                int pc_col = pc->column;
-               pc->column = tmp->len() + pc_gap;
+               pc->column = tmp->column + tmp->len() + pc_gap;
 
                /*
                 * We will handle the stuff to the right of the message colon by
@@ -1968,14 +1967,12 @@ static void align_oc_msg_colon(chunk_t *so)
                 */
                chunk_t *msg_pcn, *msg_pc = pc;
                int msg_pc_col = pc_col;
-               int msg_pcn_col = pc->column + 1;
                int msg_pcn_gap = 0;
                while ((msg_pcn = chunk_get_next(msg_pc)) != NULL) {
                   msg_pcn_gap = (msg_pcn->column - (msg_pc_col + msg_pc->len()));
-                  msg_pcn_col += msg_pcn_gap;
 
                   msg_pc_col = msg_pcn->column;
-                  msg_pcn->column = msg_pcn_col;
+                  msg_pcn->column = msg_pc->column + msg_pc->len() + msg_pcn_gap;
 
                   if (msg_pcn->type == CT_NEWLINE)
                   {
@@ -2025,7 +2022,7 @@ static void align_oc_msg_colon(chunk_t *so)
       }
       if (idx == 0)
       {
-         first_len = tlen + 1;
+         first_len = tlen;
       }
    }
 
@@ -2038,7 +2035,16 @@ static void align_oc_msg_colon(chunk_t *so)
        (len_diff > 0) &&
        ((longest->column - len_diff) > (longest->brace_level * indent_size)))
    {
-      longest->column -= len_diff;
+      /* shift all chunks on longest line left by len_diff */
+      chunk_t *pcn = longest;
+      do
+      {
+         pcn->column -= len_diff;
+         if (pcn->type == CT_NEWLINE)
+         {
+            break;
+         }
+      } while ((pcn = chunk_get_next(pcn)) != NULL);
    }
    else if (longest && (len > 0))
    {

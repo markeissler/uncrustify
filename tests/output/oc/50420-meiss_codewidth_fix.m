@@ -29,30 +29,30 @@
 {
   // a long line
   [self findstart:&startBarcode end:&endBarcode forLine:greenScalePixels
-  derivative:greenDerivative centerAt:xAxisCenterPoint min:&minValue
-  max:&maxValue];
+   derivative:greenDerivative centerAt:xAxisCenterPoint min:&minValue
+   max:&maxValue];
 
   // pre-wrapped (on colon) Xcode style
   [self findstart:&startBarcode
-  end:&endBarcode
-  forLine:greenScalePixels
-  derivative:greenDerivative
-  centerAt:xAxisCenterPoint
-  min:&minValue
-  max:&maxValue];
+   end:&endBarcode
+   forLine:greenScalePixels
+   derivative:greenDerivative
+   centerAt:xAxisCenterPoint
+   min:&minValue
+   max:&maxValue];
 
   // as single asterisk (address)
   [self findstart:&startBarcode end:&endBarcode forLine:greenScalePixels
-  derivative:greenDerivative centerAt:xAxisCenterPoint min:&minValue
-  max:*maxValue];
+   derivative:greenDerivative centerAt:xAxisCenterPoint min:&minValue
+   max:*maxValue];
 
   // a double asterisk (handle)
   [self findstart:&startBarcode end:&endBarcode forLine:greenScalePixels
-  derivative:greenDerivative centerAt:xAxisCenterPoint min:&minValue
-  max:**maxValue];
+   derivative:greenDerivative centerAt:xAxisCenterPoint min:&minValue
+   max:**maxValue];
 
   // with spaces before type
   [self findstart: &startBarcode end: &endBarcode forLine: greenScalePixels
-  derivative: greenDerivative centerAt: xAxisCenterPoint min: &minValue
-  max: **maxValue];
+   derivative: greenDerivative centerAt: xAxisCenterPoint min: &minValue
+   max: **maxValue];
 }

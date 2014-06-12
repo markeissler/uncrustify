@@ -4,6 +4,6 @@
                                completionHandler:completionHandlerBlock];
 
 [self.printInteractionController
-   presentFromRect:((isChecked) ? checked : unchecked) inView:button
-          animated:YES
- completionHandler:completionHandlerBlock];
+    presentFromRect:((isChecked) ? checked : unchecked) inView:button
+           animated:YES
+  completionHandler:completionHandlerBlock];

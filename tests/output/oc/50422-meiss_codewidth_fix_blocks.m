@@ -21,34 +21,34 @@ void (^ completionHandlerBlock)(UIPrintInteractionController *, BOOL,
 
 // def as argument
 [self.printInteractionController
-   presentFromRect:button.bounds
-            inView:button
-          animated:YES
- completionHandler:completionHandlerBlock];
+    presentFromRect:button.bounds
+             inView:button
+           animated:YES
+  completionHandler:completionHandlerBlock];
 
 // inline - longer
 [self.printInteractionController
-   presentFromRect:button.bounds
-            inView:button
-          animated:YES
+    presentFromRect:button.bounds
+             inView:button
+           animated:YES
   completionHandler:^(UIPrintInteractionController *pic, BOOL completed, NSError *error) {
-  if (!completed && error)
-  {
-    NSLog(@"%s %@", __FUNCTION__, error);
-  }
-}];
+   if (!completed && error)
+   {
+     NSLog(@"%s %@", __FUNCTION__, error);
+   }
+ }];
 
 // inline - shorter
 [self.printInteractionController
-   presentFromRect:button.bounds
-            inView:button
-          animated:YES
- completionHandler:^(NSString *pic) {
-  if (!completed && error)
-  {
-    NSLog(@"%s %@", __FUNCTION__, error);
-  }
-}];
+    presentFromRect:button.bounds
+             inView:button
+           animated:YES
+  completionHandler:^(NSString *pic) {
+   if (!completed && error)
+   {
+     NSLog(@"%s %@", __FUNCTION__, error);
+   }
+ }];
 
 // with #ifdef/endif preproc
 void (^ completionHandlerBlock)(UIPrintInteractionController *, BOOL,
