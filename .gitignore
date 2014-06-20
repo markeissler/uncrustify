@@ -1,4 +1,4 @@
-.svn
+j.svn
 *.o
 src/uncrustify
 Makefile
@@ -22,6 +22,8 @@ win32/Release
 win32/Debug
 *.obj
 autom4te.cache
+compile
+test-driver
 build
 *.xcodeproj/*.pbxuser
 *.xcodeproj/*.perspectivev3
@@ -35,3 +37,6 @@ Debug
 uncrustify-*-win32
 src/config.h
 *.sublime-workspace
+# ignore dist archives
+uncrustify-*.tar.gz
+uncrustify-*.zip
